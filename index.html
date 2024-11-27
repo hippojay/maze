@@ -217,8 +217,10 @@
         const PLAYER = 2;
         const GOAL = 3;
 
+        // At the top of your script, update the URL parameter checking:
         const urlParams = new URLSearchParams(window.location.search);
         const normalMode = urlParams.has('normal');
+        const showControls = normalMode || urlParams.has('controls');
         
         // Define possible directions
         const DIRECTIONS = {
@@ -288,6 +290,7 @@
         let controlMapping = generateRandomControls();
 
         // Function to create a readable description of controls
+        // Update the getControlDescription function for cleaner control display
         function getControlDescription() {
             const keyToSymbol = {
                 'ArrowUp': '↑',
@@ -295,20 +298,17 @@
                 'ArrowLeft': '←',
                 'ArrowRight': '→'
             };
-
+        
             const directionToWord = {
                 '0,-1': 'UP',
                 '0,1': 'DOWN',
                 '-1,0': 'LEFT',
                 '1,0': 'RIGHT'
             };
-
+        
             let description = `<div class="control-mapping">`;
-            if (normalMode) {
-                description += '<h3 style="grid-column: span 2; text-align: center;">Normal Mode</h3>';
-            } else {
-                description += '<h3 style="grid-column: span 2; text-align: center;">Random Mode</h3>';
-            }
+            description += `<h3 style="grid-column: span 2; text-align: center;">${normalMode ? 'Normal Mode' : 'Random Mode'}</h3>`;
+            description += '<p>Current control mapping:</p>';
             
             Object.entries(controlMapping).forEach(([key, direction]) => {
                 const dirString = directionToWord[`${direction.dx},${direction.dy}`];
@@ -341,15 +341,29 @@
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ];
 
-        // Update UI based on control mode
-        function updateControlsUI() {
-            const modeIndicator = document.getElementById('modeIndicator');
-            modeIndicator.textContent = normalMode ? 'Normal Mode' : 'Random Mode';
-            modeIndicator.classList.toggle('normal-mode', normalMode);
-            
-            const controlInfo = document.getElementById('controlInfo');
-            controlInfo.innerHTML = getControlDescription();
-        }
+            // Update the updateControlsUI function to conditionally show controls
+            function updateControlsUI() {
+                const modeIndicator = document.getElementById('modeIndicator');
+                const controlInfo = document.getElementById('controlInfo');
+                
+                // Update mode indicator
+                if (normalMode) {
+                    modeIndicator.textContent = 'Normal Mode';
+                    modeIndicator.classList.add('normal-mode');
+                } else {
+                    modeIndicator.textContent = 'Random Mode';
+                    modeIndicator.classList.remove('normal-mode');
+                }
+                
+                // Show or hide control mapping based on parameters
+                if (showControls) {
+                    controlInfo.innerHTML = getControlDescription();
+                    controlInfo.style.display = 'block';
+                } else {
+                    controlInfo.innerHTML = '<div class="control-mapping"><p>Use arrow keys to navigate the maze. Good luck!</p></div>';
+                    controlInfo.style.display = 'block';
+                }
+            }
 
         // Calculate and update accuracy
         function updateAccuracy() {
@@ -405,7 +419,7 @@
             modal.style.display = 'block';
         }
 
-// Update move counters
+        // Update move counters
         function updateMoveCounters() {
             document.getElementById('moveCount').textContent = moveCount;
             document.getElementById('invalidCount').textContent = invalidMoveCount;

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Simple Maze Challenge</title>
+    <title>Simple Maze Challenge - Extreme Mode</title>
     <style>
-        /* Base container styling - now uses row layout */
+        /* All existing styles remain the same */
         .game-container {
             display: flex;
             flex-direction: row;
@@ -16,13 +16,11 @@
             gap: 20px;
         }
 
-        /* Title is now above the flex container */
         .game-title {
             text-align: center;
             margin-bottom: 20px;
         }
 
-        /* Control panel styling - optimized for side placement */
         .controls {
             flex: 0 0 300px;
             padding: 15px;
@@ -31,7 +29,6 @@
             height: fit-content;
         }
 
-        /* Stats grid - made more compact */
         .stats {
             display: grid;
             grid-template-columns: repeat(1, 1fr);
@@ -41,7 +38,6 @@
             color: #444;
         }
 
-        /* Stat items - streamlined for side panel */
         .stat-item {
             background: white;
             padding: 8px;
@@ -52,7 +48,6 @@
             align-items: center;
         }
 
-        /* Control mapping - adjusted for side panel */
         .control-mapping {
             display: grid;
             grid-template-columns: 1fr;
@@ -64,7 +59,6 @@
             border-left: 4px solid #ff6b6b;
         }
 
-        /* Control items - made more compact */
         .control-item {
             display: flex;
             align-items: center;
@@ -72,7 +66,6 @@
             padding: 4px;
         }
 
-        /* Maze styling - Added specific dimensions and display properties */
         .maze {
             display: grid;
             border: 2px solid #333;
@@ -138,7 +131,6 @@
             background: #45a049;
         }
 
-        /* Mode indicator styling */
         .mode-label {
             background: #ff6b6b;
             color: white;
@@ -149,8 +141,18 @@
             font-weight: bold;
         }
 
-        .normal-mode {
-            background: #4CAF50;
+        .normal-mode { background: #4CAF50; }
+        .extreme-mode { background: #ff4444; }
+
+        /* New style for control change animation */
+        .control-mapping.changing {
+            animation: flash 0.3s;
+        }
+
+        @keyframes flash {
+            0% { background-color: #fff; }
+            50% { background-color: #ffeb3b; }
+            100% { background-color: #fff; }
         }
     </style>
 </head>
@@ -217,11 +219,12 @@
         const PLAYER = 2;
         const GOAL = 3;
 
-        // At the top of your script, update the URL parameter checking:
+        // Get URL parameters for game modes
         const urlParams = new URLSearchParams(window.location.search);
         const normalMode = urlParams.has('normal');
-        const showControls = normalMode || urlParams.has('controls');
-        
+        const extremeMode = urlParams.has('extreme');
+        const showControls = normalMode || urlParams.has('controls') || extremeMode;
+
         // Define possible directions
         const DIRECTIONS = {
             UP: { dx: 0, dy: -1 },
@@ -239,9 +242,9 @@
             return array;
         }
 
-        // Function to generate random control mappings
+        // Enhanced function to generate random controls
         function generateRandomControls() {
-            // If in normal mode, return standard controls
+            // Return standard controls for normal mode
             if (normalMode) {
                 return {
                     'ArrowUp': DIRECTIONS.UP,
@@ -251,7 +254,7 @@
                 };
             }
 
-            // Otherwise continue with random controls logic
+            // Generate random controls for extreme or default mode
             const keys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
             const directions = Object.entries(DIRECTIONS);
             
@@ -274,12 +277,13 @@
                     }
                 });
 
-                validMapping = !hasNormalMapping;
+                // For extreme mode, we accept any valid mapping
+                validMapping = extremeMode ? true : !hasNormalMapping;
             }
 
             return controlMapping;
         }
-                
+
         // Game state
         let playerPos = { x: 1, y: 1 };
         let moveCount = 0;
@@ -290,7 +294,6 @@
         let controlMapping = generateRandomControls();
 
         // Function to create a readable description of controls
-        // Update the getControlDescription function for cleaner control display
         function getControlDescription() {
             const keyToSymbol = {
                 'ArrowUp': '↑',
@@ -307,7 +310,9 @@
             };
         
             let description = `<div class="control-mapping">`;
-            description += `<h3 style="grid-column: span 2; text-align: center;">${normalMode ? 'Normal Mode' : 'Default Mode'}</h3>`;
+            description += `<h3 style="grid-column: span 2; text-align: center;">
+                ${normalMode ? 'Normal Mode' : extremeMode ? 'Extreme Mode' : 'Default Mode'}
+            </h3>`;
             description += '<p>Current control mapping:</p>';
             
             Object.entries(controlMapping).forEach(([key, direction]) => {
@@ -321,7 +326,7 @@
             description += '</div>';
             return description;
         }
-        
+
         // Create the maze layout
         const maze = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -341,29 +346,38 @@
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ];
 
-            // Update the updateControlsUI function to conditionally show controls
-            function updateControlsUI() {
-                const modeIndicator = document.getElementById('modeIndicator');
-                const controlInfo = document.getElementById('controlInfo');
-                
-                // Update mode indicator
-                if (normalMode) {
-                    modeIndicator.textContent = 'Normal Mode';
-                    modeIndicator.classList.add('normal-mode');
-                } else {
-                    modeIndicator.textContent = 'Default Mode';
-                    modeIndicator.classList.remove('normal-mode');
-                }
-                
-                // Show or hide control mapping based on parameters
-                if (showControls) {
-                    controlInfo.innerHTML = getControlDescription();
-                    controlInfo.style.display = 'block';
-                } else {
-                    controlInfo.innerHTML = '<div class="control-mapping"><p>Use arrow keys to navigate the maze. Good luck!</p></div>';
-                    controlInfo.style.display = 'block';
-                }
+        // Update the controls UI with animation for extreme mode
+        function updateControlsUI() {
+            const modeIndicator = document.getElementById('modeIndicator');
+            const controlInfo = document.getElementById('controlInfo');
+            
+            // Update mode indicator
+            if (normalMode) {
+                modeIndicator.textContent = 'Normal Mode';
+                modeIndicator.className = 'mode-label normal-mode';
+            } else if (extremeMode) {
+                modeIndicator.textContent = 'Extreme Mode';
+                modeIndicator.className = 'mode-label extreme-mode';
+            } else {
+                modeIndicator.textContent = 'Default Mode';
+                modeIndicator.className = 'mode-label';
             }
+            
+            // Show control mapping if enabled
+            if (showControls) {
+                const oldMapping = controlInfo.querySelector('.control-mapping');
+                controlInfo.innerHTML = getControlDescription();
+                const newMapping = controlInfo.querySelector('.control-mapping');
+                
+                // Add animation class for extreme mode
+                if (extremeMode && oldMapping) {
+                    newMapping.classList.add('changing');
+                    setTimeout(() => newMapping.classList.remove('changing'), 300);
+                }
+            } else {
+                controlInfo.innerHTML = '<div class="control-mapping"><p>Use arrow keys to navigate the maze. Good luck!</p></div>';
+            }
+        }
 
         // Calculate and update accuracy
         function updateAccuracy() {
@@ -374,13 +388,20 @@
         }
 
         function getAccuracyMessage(accuracy) {
-            if (accuracy >= 90) return "Excellent navigation! You rarely made wrong moves!";
+            if (extremeMode) {
+                if (accuracy >= 85) return "Incredible! You've mastered the chaos of changing controls!";
+                if (accuracy >= 70) return "Amazing adaptability with those shifting controls!";
+                if (accuracy >= 50) return "Good job handling those tricky control changes!";
+                return "Extreme mode is challenging - keep practicing those changing controls!";
+            }
+            
+        if (accuracy >= 90) return "Excellent navigation! You rarely made wrong moves!";
             if (accuracy >= 75) return "Good job! Try to watch for walls to improve accuracy.";
             if (accuracy >= 60) return "Not bad! Practice planning your route to avoid walls.";
             return "Keep practicing! Try to plan your moves carefully.";
         }
 
-        // Timer functions
+        // Timer functions remain the same
         function startTimer() {
             if (!gameStarted) {
                 gameStarted = true;
@@ -405,7 +426,7 @@
             document.getElementById('timer').textContent = formatTime(timeElapsed);
         }
 
-        // Function to show victory modal
+        // Enhanced victory modal for extreme mode
         function showVictoryModal() {
             const modal = document.getElementById('victoryModal');
             const accuracy = updateAccuracy();
@@ -414,8 +435,18 @@
             document.getElementById('finalInvalid').textContent = invalidMoveCount;
             document.getElementById('finalTime').textContent = formatTime(timeElapsed);
             document.getElementById('finalAccuracy').textContent = `${accuracy}%`;
-            document.getElementById('accuracyMessage').textContent = getAccuracyMessage(accuracy);
             
+            // Add extra congratulations for extreme mode
+            const victoryTitle = modal.querySelector('h2');
+            if (extremeMode) {
+                victoryTitle.textContent = "Extraordinary Achievement!";
+                modal.querySelector('p').textContent = "You conquered the maze with constantly changing controls!";
+            } else {
+                victoryTitle.textContent = "Congratulations!";
+                modal.querySelector('p').textContent = "You solved the maze!";
+            }
+            
+            document.getElementById('accuracyMessage').textContent = getAccuracyMessage(accuracy);
             modal.style.display = 'block';
         }
 
@@ -426,13 +457,10 @@
             updateAccuracy();
         }
 
-        // Render the maze - Updated with proper grid initialization
+        // Render the maze
         function renderMaze() {
             const mazeElement = document.getElementById('maze');
             mazeElement.innerHTML = '';
-            
-            // Set explicit grid properties for the maze container
-            mazeElement.style.display = 'grid';
             mazeElement.style.gridTemplateRows = `repeat(${MAZE_HEIGHT}, 30px)`;
             mazeElement.style.gridTemplateColumns = `repeat(${MAZE_WIDTH}, 30px)`;
             
@@ -441,7 +469,6 @@
                     const cell = document.createElement('div');
                     cell.className = 'cell';
                     
-                    // Add appropriate class based on cell content
                     if (maze[y][x] === WALL) {
                         cell.classList.add('wall');
                     } else if (x === playerPos.x && y === playerPos.y) {
@@ -455,7 +482,7 @@
             }
         }
 
-        // Handle player movement
+        // Enhanced move player function for extreme mode
         function movePlayer(key) {
             startTimer();
 
@@ -471,6 +498,13 @@
                     moveCount++;
                     playerPos.x = newX;
                     playerPos.y = newY;
+                    
+                    // Randomize controls after each valid move in extreme mode
+                    if (extremeMode) {
+                        controlMapping = generateRandomControls();
+                        updateControlsUI();
+                    }
+                    
                     renderMaze();
 
                     if (maze[newY][newX] === GOAL) {
@@ -485,7 +519,7 @@
             }
         }
 
-        // Reset game to initial state
+        // Reset game function with mode handling
         function resetGame() {
             playerPos = { x: 1, y: 1 };
             moveCount = 0;
@@ -504,7 +538,7 @@
         // Event listener for keyboard input
         document.addEventListener('keydown', (e) => {
             if (e.key.startsWith('Arrow')) {
-                e.preventDefault(); // Prevent page scrolling
+                e.preventDefault();
                 movePlayer(e.key);
             }
         });

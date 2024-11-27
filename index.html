@@ -199,64 +199,67 @@
         const PLAYER = 2;
         const GOAL = 3;
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const normalMode = urlParams.has('normal');
+        
     // Define possible directions
-    const DIRECTIONS = {
-        UP: { dx: 0, dy: -1 },
-        DOWN: { dx: 0, dy: 1 },
-        LEFT: { dx: -1, dy: 0 },
-        RIGHT: { dx: 1, dy: 0 }
-    };
+        const DIRECTIONS = {
+            UP: { dx: 0, dy: -1 },
+            DOWN: { dx: 0, dy: 1 },
+            LEFT: { dx: -1, dy: 0 },
+            RIGHT: { dx: 1, dy: 0 }
+        };
 
-    // Function to shuffle an array randomly
-    function shuffleArray(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
+        // Function to shuffle an array randomly
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
         }
-        return array;
-    }
 
     // Function to generate random control mappings
     function generateRandomControls() {
-        // Create arrays of keys and directions
-        const keys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
-        const directions = Object.entries(DIRECTIONS);
-        
-        let validMapping = false;
-        let controlMapping = {};
-
-        // Keep generating mappings until we get one where no control is in its normal position
-        while (!validMapping) {
-            // Shuffle the directions
-            const shuffledDirections = shuffleArray([...directions]);
-            
-            // Create the mapping
-            controlMapping = {};
-            let hasNormalMapping = false;
-
-            keys.forEach((key, index) => {
-                controlMapping[key] = shuffledDirections[index][1];
-                
-                // Check if this is a normal mapping
-                if ((key === 'ArrowUp' && shuffledDirections[index][0] === 'UP') ||
-                    (key === 'ArrowDown' && shuffledDirections[index][0] === 'DOWN') ||
-                    (key === 'ArrowLeft' && shuffledDirections[index][0] === 'LEFT') ||
-                    (key === 'ArrowRight' && shuffledDirections[index][0] === 'RIGHT')) {
-                    hasNormalMapping = true;
-                }
-            });
-
-            // If no control is in its normal position, we have a valid mapping
-            validMapping = !hasNormalMapping;
-        }
-
-        return controlMapping;
+    // If in normal mode, return standard controls
+    if (normalMode) {
+        return {
+            'ArrowUp': DIRECTIONS.UP,
+            'ArrowDown': DIRECTIONS.DOWN,
+            'ArrowLeft': DIRECTIONS.LEFT,
+            'ArrowRight': DIRECTIONS.RIGHT
+        };
     }
-        
-        // Check URL parameter for control mode
-        const urlParams = new URLSearchParams(window.location.search);
-        const normalControls = urlParams.has('normal');
-        
+
+    // Otherwise continue with random controls logic
+    const keys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+    const directions = Object.entries(DIRECTIONS);
+    
+    let validMapping = false;
+    let controlMapping = {};
+
+    while (!validMapping) {
+        const shuffledDirections = shuffleArray([...directions]);
+        controlMapping = {};
+        let hasNormalMapping = false;
+
+        keys.forEach((key, index) => {
+            controlMapping[key] = shuffledDirections[index][1];
+            
+            if ((key === 'ArrowUp' && shuffledDirections[index][0] === 'UP') ||
+                (key === 'ArrowDown' && shuffledDirections[index][0] === 'DOWN') ||
+                (key === 'ArrowLeft' && shuffledDirections[index][0] === 'LEFT') ||
+                (key === 'ArrowRight' && shuffledDirections[index][0] === 'RIGHT')) {
+                hasNormalMapping = true;
+            }
+        });
+
+        validMapping = !hasNormalMapping;
+    }
+
+    return controlMapping;
+}
+              
         // Game state
         let playerPos = { x: 1, y: 1 };
         let moveCount = 0;
@@ -267,33 +270,39 @@
         let controlMapping = generateRandomControls();
 
 // Function to create a readable description of controls
-    function getControlDescription() {
-        const keyToSymbol = {
-            'ArrowUp': '↑',
-            'ArrowDown': '↓',
-            'ArrowLeft': '←',
-            'ArrowRight': '→'
-        };
+function getControlDescription() {
+    const keyToSymbol = {
+        'ArrowUp': '↑',
+        'ArrowDown': '↓',
+        'ArrowLeft': '←',
+        'ArrowRight': '→'
+    };
 
-        const directionToWord = {
-            '0,-1': 'UP',
-            '0,1': 'DOWN',
-            '-1,0': 'LEFT',
-            '1,0': 'RIGHT'
-        };
+    const directionToWord = {
+        '0,-1': 'UP',
+        '0,1': 'DOWN',
+        '-1,0': 'LEFT',
+        '1,0': 'RIGHT'
+    };
 
-        let description = '<div class="control-mapping">';
-        Object.entries(controlMapping).forEach(([key, direction]) => {
-            const dirString = directionToWord[`${direction.dx},${direction.dy}`];
-            description += `
-                <div class="control-item">
-                    <span class="arrow-key">${keyToSymbol[key]}</span>
-                    <span>moves ${dirString}</span>
-                </div>`;
-        });
-        description += '</div>';
-        return description;
+    let description = `<div class="control-mapping">`;
+    if (normalMode) {
+        description += '<h3 style="grid-column: span 2; text-align: center;">Normal Mode</h3>';
+    } else {
+        description += '<h3 style="grid-column: span 2; text-align: center;">Random Mode</h3>';
     }
+    
+    Object.entries(controlMapping).forEach(([key, direction]) => {
+        const dirString = directionToWord[`${direction.dx},${direction.dy}`];
+        description += `
+            <div class="control-item">
+                <span class="arrow-key">${keyToSymbol[key]}</span>
+                <span>moves ${dirString}</span>
+            </div>`;
+    });
+    description += '</div>';
+    return description;
+}
         
         // Create the maze layout
         const maze = [

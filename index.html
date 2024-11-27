@@ -103,7 +103,33 @@
             color: #666;
             margin: 10px 0;
             font-style: italic;
+        } 
+        .control-mapping {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+            background: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #ff6b6b;
         }
+        .control-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .arrow-key {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #eee;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
     </style>
 </head>
 <body>
@@ -173,19 +199,102 @@
         const PLAYER = 2;
         const GOAL = 3;
 
+    // Define possible directions
+    const DIRECTIONS = {
+        UP: { dx: 0, dy: -1 },
+        DOWN: { dx: 0, dy: 1 },
+        LEFT: { dx: -1, dy: 0 },
+        RIGHT: { dx: 1, dy: 0 }
+    };
+
+    // Function to shuffle an array randomly
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // Function to generate random control mappings
+    function generateRandomControls() {
+        // Create arrays of keys and directions
+        const keys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+        const directions = Object.entries(DIRECTIONS);
+        
+        let validMapping = false;
+        let controlMapping = {};
+
+        // Keep generating mappings until we get one where no control is in its normal position
+        while (!validMapping) {
+            // Shuffle the directions
+            const shuffledDirections = shuffleArray([...directions]);
+            
+            // Create the mapping
+            controlMapping = {};
+            let hasNormalMapping = false;
+
+            keys.forEach((key, index) => {
+                controlMapping[key] = shuffledDirections[index][1];
+                
+                // Check if this is a normal mapping
+                if ((key === 'ArrowUp' && shuffledDirections[index][0] === 'UP') ||
+                    (key === 'ArrowDown' && shuffledDirections[index][0] === 'DOWN') ||
+                    (key === 'ArrowLeft' && shuffledDirections[index][0] === 'LEFT') ||
+                    (key === 'ArrowRight' && shuffledDirections[index][0] === 'RIGHT')) {
+                    hasNormalMapping = true;
+                }
+            });
+
+            // If no control is in its normal position, we have a valid mapping
+            validMapping = !hasNormalMapping;
+        }
+
+        return controlMapping;
+    }
+        
         // Check URL parameter for control mode
         const urlParams = new URLSearchParams(window.location.search);
         const normalControls = urlParams.has('normal');
         
         // Game state
         let playerPos = { x: 1, y: 1 };
-        let isReversed = !normalControls; // Default to reversed unless normal parameter is present
         let moveCount = 0;
         let invalidMoveCount = 0;
         let timeElapsed = 0;
         let timerInterval = null;
         let gameStarted = false;
+        let controlMapping = generateRandomControls();
 
+// Function to create a readable description of controls
+    function getControlDescription() {
+        const keyToSymbol = {
+            'ArrowUp': '↑',
+            'ArrowDown': '↓',
+            'ArrowLeft': '←',
+            'ArrowRight': '→'
+        };
+
+        const directionToWord = {
+            '0,-1': 'UP',
+            '0,1': 'DOWN',
+            '-1,0': 'LEFT',
+            '1,0': 'RIGHT'
+        };
+
+        let description = '<div class="control-mapping">';
+        Object.entries(controlMapping).forEach(([key, direction]) => {
+            const dirString = directionToWord[`${direction.dx},${direction.dy}`];
+            description += `
+                <div class="control-item">
+                    <span class="arrow-key">${keyToSymbol[key]}</span>
+                    <span>moves ${dirString}</span>
+                </div>`;
+        });
+        description += '</div>';
+        return description;
+    }
+        
         // Create the maze layout
         const maze = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -206,22 +315,10 @@
         ];
 
         // Update UI based on control mode
-        function updateControlsUI() {
-            const modeIndicator = document.getElementById('modeIndicator');
-            const controlInfo = document.getElementById('controlInfo');
-            const controlToggle = document.getElementById('controlToggle');
-
-            controlToggle.style.display = normalControls ? 'block' : 'none';
-
-            modeIndicator.className = `mode-indicator ${normalControls ? 'normal-mode' : ''}`;
-            modeIndicator.textContent = normalControls ? 'Normal Mode' : 'Reversed Mode';
-
-            if (isReversed) {
-                controlInfo.textContent = '↑ = Down | ↓ = Up | ← = Right | → = Left';
-            } else {
-                controlInfo.textContent = '↑ = Up | ↓ = Down | ← = Left | → = Right';
-            }
-        }
+  function updateControlsUI() {
+        const controlInfo = document.getElementById('controlInfo');
+        controlInfo.innerHTML = getControlDescription();
+    }
 
         // Calculate and update accuracy
         function updateAccuracy() {
@@ -310,14 +407,11 @@
         }
 
         // Handle player movement
-        function movePlayer(dx, dy) {
-            startTimer();
+        function movePlayer(key) {
+        startTimer();
 
-            if (isReversed) {
-                dx = -dx;
-                dy = -dy;
-            }
-
+        if (controlMapping[key]) {
+            const { dx, dy } = controlMapping[key];
             const newX = playerPos.x + dx;
             const newY = playerPos.y + dy;
 
@@ -340,43 +434,35 @@
             
             updateMoveCounters();
         }
+    }
 
         // Reset game to initial state
-        function resetGame() {
-            playerPos = { x: 1, y: 1 };
-            moveCount = 0;
-            invalidMoveCount = 0;
-            timeElapsed = 0;
-            gameStarted = false;
-            document.getElementById('victoryModal').style.display = 'none';
-            updateMoveCounters();
-            updateTimer();
-            renderMaze();
-        }
+  function resetGame() {
+        playerPos = { x: 1, y: 1 };
+        moveCount = 0;
+        invalidMoveCount = 0;
+        timeElapsed = 0;
+        gameStarted = false;
+        controlMapping = generateRandomControls();
+        document.getElementById('victoryModal').style.display = 'none';
+        updateMoveCounters();
+        updateTimer();
+        updateControlsUI();
+        renderMaze();
+    }
 
-        // Event listeners
-        document.addEventListener('keydown', (e) => {
-            if (!gameStarted || document.getElementById('victoryModal').style.display === 'block') {
-                if (e.key.startsWith('Arrow')) {
-                    startTimer();
-                }
+            // Modified event listener for keyboard input
+    document.addEventListener('keydown', (e) => {
+        if (!gameStarted || document.getElementById('victoryModal').style.display === 'block') {
+            if (e.key.startsWith('Arrow')) {
+                startTimer();
             }
-            
-            switch(e.key) {
-                case 'ArrowUp':
-                    movePlayer(0, -1);
-                    break;
-                case 'ArrowDown':
-                    movePlayer(0, 1);
-                    break;
-                case 'ArrowLeft':
-                    movePlayer(-1, 0);
-                    break;
-                case 'ArrowRight':
-                    movePlayer(1, 0);
-                    break;
-            }
-        });
+        }
+        
+        if (e.key.startsWith('Arrow')) {
+            movePlayer(e.key);
+        }
+    });
 
         if (normalControls) {
             document.getElementById('reverseControls').addEventListener('change', (e) => {
@@ -386,12 +472,13 @@
         }
 
         // Initialize the game
-        function initGame() {
-            renderMaze();
-            updateMoveCounters();
-            updateTimer();
-            updateControlsUI();
-        }
+    // Initialize the game
+    function initGame() {
+        renderMaze();
+        updateMoveCounters();
+        updateTimer();
+        updateControlsUI();
+    }
 
         // Start the game
         initGame();

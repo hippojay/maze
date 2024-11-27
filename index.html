@@ -72,10 +72,13 @@
             padding: 4px;
         }
 
-        /* Rest of the styles remain the same */
+        /* Maze styling - Added specific dimensions and display properties */
         .maze {
+            display: grid;
             border: 2px solid #333;
             background: #f0f0f0;
+            width: fit-content;
+            height: fit-content;
         }
 
         .cell {
@@ -217,7 +220,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const normalMode = urlParams.has('normal');
         
-    // Define possible directions
+        // Define possible directions
         const DIRECTIONS = {
             UP: { dx: 0, dy: -1 },
             DOWN: { dx: 0, dy: 1 },
@@ -234,47 +237,47 @@
             return array;
         }
 
-    // Function to generate random control mappings
-    function generateRandomControls() {
-    // If in normal mode, return standard controls
-    if (normalMode) {
-        return {
-            'ArrowUp': DIRECTIONS.UP,
-            'ArrowDown': DIRECTIONS.DOWN,
-            'ArrowLeft': DIRECTIONS.LEFT,
-            'ArrowRight': DIRECTIONS.RIGHT
-        };
-    }
-
-    // Otherwise continue with random controls logic
-    const keys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
-    const directions = Object.entries(DIRECTIONS);
-    
-    let validMapping = false;
-    let controlMapping = {};
-
-    while (!validMapping) {
-        const shuffledDirections = shuffleArray([...directions]);
-        controlMapping = {};
-        let hasNormalMapping = false;
-
-        keys.forEach((key, index) => {
-            controlMapping[key] = shuffledDirections[index][1];
-            
-            if ((key === 'ArrowUp' && shuffledDirections[index][0] === 'UP') ||
-                (key === 'ArrowDown' && shuffledDirections[index][0] === 'DOWN') ||
-                (key === 'ArrowLeft' && shuffledDirections[index][0] === 'LEFT') ||
-                (key === 'ArrowRight' && shuffledDirections[index][0] === 'RIGHT')) {
-                hasNormalMapping = true;
+        // Function to generate random control mappings
+        function generateRandomControls() {
+            // If in normal mode, return standard controls
+            if (normalMode) {
+                return {
+                    'ArrowUp': DIRECTIONS.UP,
+                    'ArrowDown': DIRECTIONS.DOWN,
+                    'ArrowLeft': DIRECTIONS.LEFT,
+                    'ArrowRight': DIRECTIONS.RIGHT
+                };
             }
-        });
 
-        validMapping = !hasNormalMapping;
-    }
+            // Otherwise continue with random controls logic
+            const keys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+            const directions = Object.entries(DIRECTIONS);
+            
+            let validMapping = false;
+            let controlMapping = {};
 
-    return controlMapping;
-}
-              
+            while (!validMapping) {
+                const shuffledDirections = shuffleArray([...directions]);
+                controlMapping = {};
+                let hasNormalMapping = false;
+
+                keys.forEach((key, index) => {
+                    controlMapping[key] = shuffledDirections[index][1];
+                    
+                    if ((key === 'ArrowUp' && shuffledDirections[index][0] === 'UP') ||
+                        (key === 'ArrowDown' && shuffledDirections[index][0] === 'DOWN') ||
+                        (key === 'ArrowLeft' && shuffledDirections[index][0] === 'LEFT') ||
+                        (key === 'ArrowRight' && shuffledDirections[index][0] === 'RIGHT')) {
+                        hasNormalMapping = true;
+                    }
+                });
+
+                validMapping = !hasNormalMapping;
+            }
+
+            return controlMapping;
+        }
+                
         // Game state
         let playerPos = { x: 1, y: 1 };
         let moveCount = 0;
@@ -284,40 +287,40 @@
         let gameStarted = false;
         let controlMapping = generateRandomControls();
 
-// Function to create a readable description of controls
-function getControlDescription() {
-    const keyToSymbol = {
-        'ArrowUp': '↑',
-        'ArrowDown': '↓',
-        'ArrowLeft': '←',
-        'ArrowRight': '→'
-    };
+        // Function to create a readable description of controls
+        function getControlDescription() {
+            const keyToSymbol = {
+                'ArrowUp': '↑',
+                'ArrowDown': '↓',
+                'ArrowLeft': '←',
+                'ArrowRight': '→'
+            };
 
-    const directionToWord = {
-        '0,-1': 'UP',
-        '0,1': 'DOWN',
-        '-1,0': 'LEFT',
-        '1,0': 'RIGHT'
-    };
+            const directionToWord = {
+                '0,-1': 'UP',
+                '0,1': 'DOWN',
+                '-1,0': 'LEFT',
+                '1,0': 'RIGHT'
+            };
 
-    let description = `<div class="control-mapping">`;
-    if (normalMode) {
-        description += '<h3 style="grid-column: span 2; text-align: center;">Normal Mode</h3>';
-    } else {
-        description += '<h3 style="grid-column: span 2; text-align: center;">Random Mode</h3>';
-    }
-    
-    Object.entries(controlMapping).forEach(([key, direction]) => {
-        const dirString = directionToWord[`${direction.dx},${direction.dy}`];
-        description += `
-            <div class="control-item">
-                <span class="arrow-key">${keyToSymbol[key]}</span>
-                <span>moves ${dirString}</span>
-            </div>`;
-    });
-    description += '</div>';
-    return description;
-}
+            let description = `<div class="control-mapping">`;
+            if (normalMode) {
+                description += '<h3 style="grid-column: span 2; text-align: center;">Normal Mode</h3>';
+            } else {
+                description += '<h3 style="grid-column: span 2; text-align: center;">Random Mode</h3>';
+            }
+            
+            Object.entries(controlMapping).forEach(([key, direction]) => {
+                const dirString = directionToWord[`${direction.dx},${direction.dy}`];
+                description += `
+                    <div class="control-item">
+                        <span class="arrow-key">${keyToSymbol[key]}</span>
+                        <span>moves ${dirString}</span>
+                    </div>`;
+            });
+            description += '</div>';
+            return description;
+        }
         
         // Create the maze layout
         const maze = [
@@ -339,10 +342,14 @@ function getControlDescription() {
         ];
 
         // Update UI based on control mode
-  function updateControlsUI() {
-        const controlInfo = document.getElementById('controlInfo');
-        controlInfo.innerHTML = getControlDescription();
-    }
+        function updateControlsUI() {
+            const modeIndicator = document.getElementById('modeIndicator');
+            modeIndicator.textContent = normalMode ? 'Normal Mode' : 'Random Mode';
+            modeIndicator.classList.toggle('normal-mode', normalMode);
+            
+            const controlInfo = document.getElementById('controlInfo');
+            controlInfo.innerHTML = getControlDescription();
+        }
 
         // Calculate and update accuracy
         function updateAccuracy() {
@@ -398,25 +405,29 @@ function getControlDescription() {
             modal.style.display = 'block';
         }
 
-        // Update move counters
+// Update move counters
         function updateMoveCounters() {
             document.getElementById('moveCount').textContent = moveCount;
             document.getElementById('invalidCount').textContent = invalidMoveCount;
             updateAccuracy();
         }
 
-        // Render the maze
+        // Render the maze - Updated with proper grid initialization
         function renderMaze() {
             const mazeElement = document.getElementById('maze');
             mazeElement.innerHTML = '';
+            
+            // Set explicit grid properties for the maze container
             mazeElement.style.display = 'grid';
-            mazeElement.style.gridTemplate = `repeat(${MAZE_HEIGHT}, 30px) / repeat(${MAZE_WIDTH}, 30px)`;
-
+            mazeElement.style.gridTemplateRows = `repeat(${MAZE_HEIGHT}, 30px)`;
+            mazeElement.style.gridTemplateColumns = `repeat(${MAZE_WIDTH}, 30px)`;
+            
             for (let y = 0; y < MAZE_HEIGHT; y++) {
                 for (let x = 0; x < MAZE_WIDTH; x++) {
                     const cell = document.createElement('div');
                     cell.className = 'cell';
                     
+                    // Add appropriate class based on cell content
                     if (maze[y][x] === WALL) {
                         cell.classList.add('wall');
                     } else if (x === playerPos.x && y === playerPos.y) {
@@ -432,77 +443,65 @@ function getControlDescription() {
 
         // Handle player movement
         function movePlayer(key) {
-        startTimer();
+            startTimer();
 
-        if (controlMapping[key]) {
-            const { dx, dy } = controlMapping[key];
-            const newX = playerPos.x + dx;
-            const newY = playerPos.y + dy;
+            if (controlMapping[key]) {
+                const { dx, dy } = controlMapping[key];
+                const newX = playerPos.x + dx;
+                const newY = playerPos.y + dy;
 
-            if (newX >= 0 && newX < MAZE_WIDTH && 
-                newY >= 0 && newY < MAZE_HEIGHT && 
-                maze[newY][newX] !== WALL) {
-                
-                moveCount++;
-                playerPos.x = newX;
-                playerPos.y = newY;
-                renderMaze();
+                if (newX >= 0 && newX < MAZE_WIDTH && 
+                    newY >= 0 && newY < MAZE_HEIGHT && 
+                    maze[newY][newX] !== WALL) {
+                    
+                    moveCount++;
+                    playerPos.x = newX;
+                    playerPos.y = newY;
+                    renderMaze();
 
-                if (maze[newY][newX] === GOAL) {
-                    stopTimer();
-                    showVictoryModal();
+                    if (maze[newY][newX] === GOAL) {
+                        stopTimer();
+                        showVictoryModal();
+                    }
+                } else {
+                    invalidMoveCount++;
                 }
-            } else {
-                invalidMoveCount++;
+                
+                updateMoveCounters();
             }
-            
-            updateMoveCounters();
         }
-    }
 
         // Reset game to initial state
-  function resetGame() {
-        playerPos = { x: 1, y: 1 };
-        moveCount = 0;
-        invalidMoveCount = 0;
-        timeElapsed = 0;
-        gameStarted = false;
-        controlMapping = generateRandomControls();
-        document.getElementById('victoryModal').style.display = 'none';
-        updateMoveCounters();
-        updateTimer();
-        updateControlsUI();
-        renderMaze();
-    }
+        function resetGame() {
+            playerPos = { x: 1, y: 1 };
+            moveCount = 0;
+            invalidMoveCount = 0;
+            timeElapsed = 0;
+            gameStarted = false;
+            stopTimer();
+            controlMapping = generateRandomControls();
+            document.getElementById('victoryModal').style.display = 'none';
+            updateMoveCounters();
+            updateTimer();
+            updateControlsUI();
+            renderMaze();
+        }
 
-            // Modified event listener for keyboard input
-    document.addEventListener('keydown', (e) => {
-        if (!gameStarted || document.getElementById('victoryModal').style.display === 'block') {
+        // Event listener for keyboard input
+        document.addEventListener('keydown', (e) => {
             if (e.key.startsWith('Arrow')) {
-                startTimer();
+                e.preventDefault(); // Prevent page scrolling
+                movePlayer(e.key);
             }
-        }
-        
-        if (e.key.startsWith('Arrow')) {
-            movePlayer(e.key);
-        }
-    });
-
-        if (normalControls) {
-            document.getElementById('reverseControls').addEventListener('change', (e) => {
-                isReversed = e.target.checked;
-                updateControlsUI();
-            });
-        }
+        });
 
         // Initialize the game
-    // Initialize the game
-    function initGame() {
-        renderMaze();
-        updateMoveCounters();
-        updateTimer();
-        updateControlsUI();
-    }
+        function initGame() {
+            updateControlsUI();
+            renderMaze();
+            updateMoveCounters();
+            updateTimer();
+        }
 
         // Start the game
         initGame();
